@@ -1,12 +1,30 @@
 import { useState } from 'react'
-import { colorPalettes, fractalModels } from './models/fractals'
-import './App.css'
+import colorPalettes from '@models/colors'
+import fractalModels from '@models/fractals'
+import '/src/App.css'
 
 function AppPrototype() {
-  const [count, setCount] = useState(0)
+
 
   // This config is replaced with your current settings when you download the demo.
-  const DEFAULTS = /* CONFIG_START */ { fractal: 'julia', movement: 'drift', family: 'lace', speed: 0.4, morphSpeed: 0.6, morphAmount: 1, cReal: -0.7, cImag: 0.27015, blur: 24, strength: 0.45, palette: 'sage', resolution: 320, fps: 10, iterations: 64, zoom: 1.1, tint: 0.35 } /* CONFIG_END */;
+  const DEFAULTS = {
+    fractal: 'julia',
+    movement: 'drift',
+    family: 'lace',
+    speed: 0.4,
+    morphSpeed: 0.6,
+    morphAmount: 1,
+    cReal: -0.7,
+    cImag: 0.27015,
+    blur: 24,
+    strength: 0.45,
+    palette: 'sage',
+    resolution: 320,
+    fps: 10,
+    iterations: 64,
+    zoom: 1.1,
+    tint: 0.35
+  }
   const standaloneSource = '<!doctype html>\n' + document.documentElement.outerHTML;
   const state = { ...DEFAULTS };
   const $ = (id) => document.getElementById(id);
@@ -254,20 +272,27 @@ function AppPrototype() {
     });
   }
   document.querySelectorAll('[data-palette]').forEach(button => button.addEventListener('click', () => { state.palette = button.dataset.palette; updateAppearance(); draw(); }));
-  $('pause').addEventListener('click', () => { paused = !paused; restart(); });
+
+  function focusMode(enabled) {
+    document.body.classList.toggle('focus-mode', enabled); (enabled ? $('restore') : $('focus')).focus();
+  }
+  $('pause').addEventListener('click', () => { paused });
   $('toggle-glass').addEventListener('click', () => {
     const removed = $('glass').classList.toggle('no-glass');
     $('toggle-glass').textContent = removed ? 'Add glass' : 'Remove glass';
     $('toggle-glass').setAttribute('aria-pressed', String(!removed));
     $('glass-caption').textContent = removed ? 'The unfiltered canvas' : 'Looking through frosted glass';
   });
-  function focusMode(enabled) { document.body.classList.toggle('focus-mode', enabled); (enabled ? $('restore') : $('focus')).focus(); }
   $('focus').addEventListener('click', () => focusMode(true));
   $('restore').addEventListener('click', () => focusMode(false));
+
   document.addEventListener('keydown', event => { if (event.key === 'Escape' && document.body.classList.contains('focus-mode')) focusMode(false); });
   document.addEventListener('visibilitychange', restart);
+
   window.addEventListener('resize', resize);
+
   motionPreference.addEventListener('change', event => { if (event.matches) { paused = true; restart(); } });
+
   canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); contextLost = true; stop(); updateMotionUI(); });
   canvas.addEventListener('webglcontextrestored', () => {
     contextLost = false;
@@ -288,68 +313,67 @@ function AppPrototype() {
     catch (error) { program = null; notice('WebGL could not initialize. This device will show a static background.'); console.error(error); updateMotionUI(); }
   } else { notice('WebGL is unavailable here. This device will show a static background.'); updateMotionUI(); resize(); }
   if (motionPreference.matches) $('footnote').textContent = 'Reduced motion: starts paused · resume to preview';
-}
 
-return (
-  <>
-    <canvas id="field" aria-hidden="true"></canvas>
-    <div class="shell">
-      <header>
-        <div class="brand">
-          <svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><circle cx="14" cy="14" r="9" stroke="currentColor" stroke-width="1.2" /><ellipse cx="14" cy="14" rx="5" ry="12" transform="rotate(42 14 14)" stroke="currentColor" stroke-width="1.2" /><circle cx="22" cy="7" r="2.4" fill="currentColor" /></svg>
-          <div><strong>JULIA</strong><span>Ambient background lab</span></div>
-        </div>
-        <div class="top-actions">
-          <button class="button" id="pause" type="button" aria-label="Pause animation" aria-pressed="false"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 3h3v10H4zM9 3h3v10H9z" /></svg><span>Pause</span></button>
-          <button class="button" id="focus" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 2H2v4m8-4h4v4M2 10v4h4m8-4v4h-4" /></svg><span class="desktop-label">Background only</span></button>
-        </div>
-      </header>
-      <main>
-        <section class="sample" aria-label="Frosted glass preview">
-          <p class="eyebrow">A quieter kind of background</p>
-          <div class="glass" id="glass">
-            <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 3v26M3 16h26M7 7l18 18M7 25L25 7" stroke="currentColor" stroke-width="1.2" /><circle cx="16" cy="16" r="7" fill="#ffffff44" stroke="currentColor" stroke-width="1.2" /></svg>
-            <h1>Room for<br />thought.</h1>
-            <p>A calm surface, with just enough movement to feel alive.</p>
+  return (
+    <>
+      <canvas id="field" aria-hidden="true"></canvas>
+      <div className="shell">
+        <header>
+          <div className="brand">
+            <svg viewBox="0 0 28 28" fill="none" aria-hidden="true"><circle cx="14" cy="14" r="9" stroke="currentColor" stroke-width="1.2" /><ellipse cx="14" cy="14" rx="5" ry="12" transform="rotate(42 14 14)" stroke="currentColor" stroke-width="1.2" /><circle cx="22" cy="7" r="2.4" fill="currentColor" /></svg>
+            <div><strong>JULIA</strong><span>Ambient background lab</span></div>
           </div>
-          <div class="sample-caption"><span id="glass-caption">Looking through frosted glass</span><button class="text-button" id="toggle-glass" type="button" aria-pressed="true">Remove glass</button></div>
-        </section>
-        <aside class="controls" aria-label="Background controls">
-          <div id="notice" role="status"></div>
-          <div class="controls-title"><h2>Make it subtle.</h2><span class="status" id="status">Moving slowly</span></div>
-          <div class="select-group family-select"><label for="fractal">Fractal</label><select id="fractal"><option value="julia">Julia</option><option value="cubic">Cubic Julia</option><option value="ship">Burning Ship Julia</option><option value="tricorn">Tricorn Julia</option></select></div>
-          <div class="select-group family-select"><label for="family">Shape preset</label><select id="family"><option value="lace">Soft filigree</option><option value="spiral">Spirals</option><option value="islands">Little islands</option></select></div>
-          <div class="select-group family-select"><label for="movement">Movement</label><select id="movement"><option value="drift">Drifting field</option><option value="centered">Centered shape</option></select></div>
-          <div class="control"><div class="label-line"><label for="speed">Drift speed</label><output id="speed-value" for="speed">0.4×</output></div><input id="speed" type="range" min="0" max="2" step="0.05" value="0.4" /></div>
-          <div class="control"><div class="label-line"><label for="morphSpeed">Morph speed</label><output id="morphSpeed-value" for="morphSpeed">0.6×</output></div><input id="morphSpeed" type="range" min="0" max="2" step="0.05" value="0.6" /></div>
-          <div class="control"><div class="label-line"><label for="morphAmount">Morph amount</label><output id="morphAmount-value" for="morphAmount">1.0×</output></div><input id="morphAmount" type="range" min="0" max="4" step="0.05" value="1" /></div>
-          <p class="control-hint">Drift moves the view. Morph changes the shape itself.</p>
-          <div class="control"><div class="label-line"><label for="blur">Glass blur</label><output id="blur-value" for="blur">24 px</output></div><input id="blur" type="range" min="0" max="64" step="1" value="24" /></div>
-          <div class="control"><div class="label-line"><label for="strength">Contrast</label><output id="strength-value" for="strength">45%</output></div><input id="strength" type="range" min="0.08" max="1" step="0.01" value="0.45" /></div>
-          <div class="control"><div class="label-line"><span id="palette-label">Palette</span></div><div class="colorPalettes" role="group" aria-labelledby="palette-label"><button class="palette" type="button" data-palette="sage" aria-pressed="true"><span class="swatch" style="background:#a2b7aa"></span>Sage</button><button class="palette" type="button" data-palette="plum" aria-pressed="false"><span class="swatch" style="background:#b4a2b9"></span>Plum</button><button class="palette" type="button" data-palette="sand" aria-pressed="false"><span class="swatch" style="background:#c4b59e"></span>Sand</button></div></div>
-          <hr class="divide" />
-            <div class="render-title">Rendering budget</div>
-            <div class="control"><div class="label-line"><label for="resolution">Longest edge</label><output id="resolution-value" for="resolution">320 px</output></div><input id="resolution" type="range" min="64" max="1024" step="16" value="320" /></div>
-            <div class="control"><div class="label-line"><label for="fps">Update rate</label><output id="fps-value" for="fps">10 fps</output></div><input id="fps" type="range" min="1" max="60" step="1" value="10" /></div>
-            <p class="control-hint">Applies as you drag. Lower values reduce detail and updates.</p>
+          <div className="top-actions">
+            <button className="button" id="pause" onClick="paused = !paused; restart();" type="button" aria-label="Pause animation" aria-pressed="false"><svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4 3h3v10H4zM9 3h3v10H9z" /></svg><span>Pause</span></button>
+            <button className="button" id="focus" type="button"><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" aria-hidden="true"><path d="M6 2H2v4m8-4h4v4M2 10v4h4m8-4v4h-4" /></svg><span className="desktop-label">Background only</span></button>
+          </div>
+        </header>
+        <main>
+          <section className="sample" aria-label="Frosted glass preview">
+            <p className="eyebrow">A quieter kind of background</p>
+            <div className="glass" id="glass">
+              <svg viewBox="0 0 32 32" fill="none" aria-hidden="true"><path d="M16 3v26M3 16h26M7 7l18 18M7 25L25 7" stroke="currentColor" stroke-width="1.2" /><circle cx="16" cy="16" r="7" fill="#ffffff44" stroke="currentColor" stroke-width="1.2" /></svg>
+              <h1>Room for<br />thought.</h1>
+              <p>A calm surface, with just enough movement to feel alive.</p>
+            </div>
+            <div className="sample-caption"><span id="glass-caption">Looking through frosted glass</span><button className="text-button" id="toggle-glass" type="button" aria-pressed="true">Remove glass</button></div>
+          </section>
+          <aside className="controls" aria-label="Background controls">
+            <div id="notice" role="status"></div>
+            <div className="controls-title"><h2>Make it subtle.</h2><span className="status" id="status">Moving slowly</span></div>
+            <div className="select-group family-select"><label for="fractal">Fractal</label><select id="fractal"><option value="julia">Julia</option><option value="cubic">Cubic Julia</option><option value="ship">Burning Ship Julia</option><option value="tricorn">Tricorn Julia</option></select></div>
+            <div className="select-group family-select"><label for="family">Shape preset</label><select id="family"><option value="lace">Soft filigree</option><option value="spiral">Spirals</option><option value="islands">Little islands</option></select></div>
+            <div className="select-group family-select"><label for="movement">Movement</label><select id="movement"><option value="drift">Drifting field</option><option value="centered">Centered shape</option></select></div>
+            <div className="control"><div className="label-line"><label for="speed">Drift speed</label><output id="speed-value" for="speed">0.4×</output></div><input id="speed" type="range" min="0" max="2" step="0.05" value="0.4" /></div>
+            <div className="control"><div className="label-line"><label for="morphSpeed">Morph speed</label><output id="morphSpeed-value" for="morphSpeed">0.6×</output></div><input id="morphSpeed" type="range" min="0" max="2" step="0.05" value="0.6" /></div>
+            <div className="control"><div className="label-line"><label for="morphAmount">Morph amount</label><output id="morphAmount-value" for="morphAmount">1.0×</output></div><input id="morphAmount" type="range" min="0" max="4" step="0.05" value="1" /></div>
+            <p className="control-hint">Drift moves the view. Morph changes the shape itself.</p>
+            <div className="control"><div className="label-line"><label for="blur">Glass blur</label><output id="blur-value" for="blur">24 px</output></div><input id="blur" type="range" min="0" max="64" step="1" value="24" /></div>
+            <div className="control"><div className="label-line"><label for="strength">Contrast</label><output id="strength-value" for="strength">45%</output></div><input id="strength" type="range" min="0.08" max="1" step="0.01" value="0.45" /></div>
+            <div className="control"><div className="label-line"><span id="palette-label">Palette</span></div><div className="colorPalettes" role="group" aria-labelledby="palette-label"><button className="palette" type="button" data-palette="sage" aria-pressed="true"><span className="swatch" style="background:#a2b7aa"></span>Sage</button><button className="palette" type="button" data-palette="plum" aria-pressed="false"><span className="swatch" style="background:#b4a2b9"></span>Plum</button><button className="palette" type="button" data-palette="sand" aria-pressed="false"><span className="swatch" style="background:#c4b59e"></span>Sand</button></div></div>
+            <hr className="divide" />
+            <div className="render-title">Rendering budget</div>
+            <div className="control"><div className="label-line"><label for="resolution">Longest edge</label><output id="resolution-value" for="resolution">320 px</output></div><input id="resolution" type="range" min="64" max="1024" step="16" value="320" /></div>
+            <div className="control"><div className="label-line"><label for="fps">Update rate</label><output id="fps-value" for="fps">10 fps</output></div><input id="fps" type="range" min="1" max="60" step="1" value="10" /></div>
+            <p className="control-hint">Applies as you drag. Lower values reduce detail and updates.</p>
             <details><summary>Shape parameters & more</summary>
-              <div class="control" style="margin-top:14px"><div class="label-line"><label for="cReal">Base c · real</label><output id="cReal-value" for="cReal">−0.700</output></div><input id="cReal" type="range" min="-1.5" max="1.5" step="0.001" value="-0.7" /></div>
-              <div class="control"><div class="label-line"><label for="cImag">Base c · imaginary</label><output id="cImag-value" for="cImag">0.270</output></div><input id="cImag" type="range" min="-1.5" max="1.5" step="0.001" value="0.27" /></div>
-              <p class="parameter-readout" id="parameter-readout">Animated c: —</p>
-              <div class="control"><div class="label-line"><label for="zoom">Zoom</label><output id="zoom-value" for="zoom">1.1×</output></div><input id="zoom" type="range" min="0.6" max="3" step="0.05" value="1.1" /></div>
-              <div class="control"><div class="label-line"><label for="tint">Glass tint</label><output id="tint-value" for="tint">35%</output></div><input id="tint" type="range" min="0" max="0.85" step="0.01" value="0.35" /></div>
-              <div class="select-group"><label for="iterations">Maximum iterations per pixel</label><select id="iterations"><option value="32">32</option><option value="64" selected>64</option><option value="96">96</option><option value="128">128</option></select></div>
+              <div className="control" style="margin-top:14px"><div className="label-line"><label for="cReal">Base c · real</label><output id="cReal-value" for="cReal">−0.700</output></div><input id="cReal" type="range" min="-1.5" max="1.5" step="0.001" value="-0.7" /></div>
+              <div className="control"><div className="label-line"><label for="cImag">Base c · imaginary</label><output id="cImag-value" for="cImag">0.270</output></div><input id="cImag" type="range" min="-1.5" max="1.5" step="0.001" value="0.27" /></div>
+              <p className="parameter-readout" id="parameter-readout">Animated c: —</p>
+              <div className="control"><div className="label-line"><label for="zoom">Zoom</label><output id="zoom-value" for="zoom">1.1×</output></div><input id="zoom" type="range" min="0.6" max="3" step="0.05" value="1.1" /></div>
+              <div className="control"><div className="label-line"><label for="tint">Glass tint</label><output id="tint-value" for="tint">35%</output></div><input id="tint" type="range" min="0" max="0.85" step="0.01" value="0.35" /></div>
+              <div className="select-group"><label for="iterations">Maximum iterations per pixel</label><select id="iterations"><option value="32">32</option><option value="64" selected>64</option><option value="96">96</option><option value="128">128</option></select></div>
             </details>
-            <div class="budget" title="Pixels × iteration limit × target FPS. An upper bound on fractal iterations, not a GPU timing measurement."><span>Iteration ceiling</span><strong id="budget">—</strong></div>
-            <button class="text-button" id="download" type="button" style="margin-top:16px">Download standalone HTML ↗</button>
-        </aside>
-      </main>
-      <footer><div class="metrics"><span id="buffer">320 × 180 buffer</span><span id="actual-fps">10 fps target</span><span>One draw per update</span></div><span id="footnote">Pauses in hidden tabs · no dependencies</span></footer>
-    </div>
-    <button class="button restore" id="restore" type="button">Show controls <span style="opacity:.5">Esc</span></button>
+            <div className="budget" title="Pixels × iteration limit × target FPS. An upper bound on fractal iterations, not a GPU timing measurement."><span>Iteration ceiling</span><strong id="budget">—</strong></div>
+            <button className="text-button" id="download" type="button" style="margin-top:16px">Download standalone HTML ↗</button>
+          </aside>
+        </main>
+        <footer><div className="metrics"><span id="buffer">320 × 180 buffer</span><span id="actual-fps">10 fps target</span><span>One draw per update</span></div><span id="footnote">Pauses in hidden tabs · no dependencies</span></footer>
+      </div>
+      <button className="button restore" id="restore" type="button">Show controls <span style="opacity:.5">Esc</span></button>
 
-  </>
-)
+    </>
+  )
 }
 
 export default AppPrototype
