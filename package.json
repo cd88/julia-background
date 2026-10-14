@@ -1,0 +1,23 @@
+{
+  "name": "julia-background",
+  "version": "1.0.0",
+  "description": "performant customizable dynamic background generator",
+  "keywords": [
+    "dynamic",
+    "moving",
+    "shifting",
+    "background",
+    "generator"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "cd88:julia-background"
+  },
+  "license": "ISC",
+  "author": "cd88",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "test"
+  }
+}
