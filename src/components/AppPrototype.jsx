@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useEffect, useRef } from 'react'
 import colorPalettes from '@models/colors'
 import fractalModels from '@models/fractals'
 import '/src/App.css'
 
 function AppPrototype() {
+  const canvasRef = useRef(null)
 
-
+  function setup(canvas, signal) {
   // This config is replaced with your current settings when you download the demo.
   const DEFAULTS = {
     fractal: 'julia',
@@ -28,7 +29,6 @@ function AppPrototype() {
   const standaloneSource = '<!doctype html>\n' + document.documentElement.outerHTML;
   const state = { ...DEFAULTS };
   const $ = (id) => document.getElementById(id);
-  const canvas = $('field');
   const motionPreference = window.matchMedia('(prefers-reduced-motion: reduce)');
   let paused = motionPreference.matches;
   let contextLost = false;
@@ -269,35 +269,35 @@ function AppPrototype() {
       else if (!document.hidden) draw();
       updateBudget();
       if (['speed', 'fps', 'morphSpeed', 'morphAmount', 'movement'].includes(name)) restart();
-    });
+    }, { signal });
   }
-  document.querySelectorAll('[data-palette]').forEach(button => button.addEventListener('click', () => { state.palette = button.dataset.palette; updateAppearance(); draw(); }));
+  document.querySelectorAll('[data-palette]').forEach(button => button.addEventListener('click', () => { state.palette = button.dataset.palette; updateAppearance(); draw(); }, { signal }));
 
   function focusMode(enabled) {
     document.body.classList.toggle('focus-mode', enabled); (enabled ? $('restore') : $('focus')).focus();
   }
-  $('pause').addEventListener('click', () => { paused });
+  $('pause').addEventListener('click', () => { paused }, { signal });
   $('toggle-glass').addEventListener('click', () => {
     const removed = $('glass').classList.toggle('no-glass');
     $('toggle-glass').textContent = removed ? 'Add glass' : 'Remove glass';
     $('toggle-glass').setAttribute('aria-pressed', String(!removed));
     $('glass-caption').textContent = removed ? 'The unfiltered canvas' : 'Looking through frosted glass';
-  });
-  $('focus').addEventListener('click', () => focusMode(true));
-  $('restore').addEventListener('click', () => focusMode(false));
+  }, { signal });
+  $('focus').addEventListener('click', () => focusMode(true), { signal });
+  $('restore').addEventListener('click', () => focusMode(false), { signal });
 
-  document.addEventListener('keydown', event => { if (event.key === 'Escape' && document.body.classList.contains('focus-mode')) focusMode(false); });
-  document.addEventListener('visibilitychange', restart);
+  document.addEventListener('keydown', event => { if (event.key === 'Escape' && document.body.classList.contains('focus-mode')) focusMode(false); }, { signal });
+  document.addEventListener('visibilitychange', restart, { signal });
 
-  window.addEventListener('resize', resize);
+  window.addEventListener('resize', resize, { signal });
 
-  motionPreference.addEventListener('change', event => { if (event.matches) { paused = true; restart(); } });
+  motionPreference.addEventListener('change', event => { if (event.matches) { paused = true; restart(); } }, { signal });
 
-  canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); contextLost = true; stop(); updateMotionUI(); });
+  canvas.addEventListener('webglcontextlost', event => { event.preventDefault(); contextLost = true; stop(); updateMotionUI(); }, { signal });
   canvas.addEventListener('webglcontextrestored', () => {
     contextLost = false;
     try { initialize(); restart(); } catch (error) { program = null; notice('The renderer could not restart. The static background is still available.'); console.error(error); updateMotionUI(); }
-  });
+  }, { signal });
   $('download').addEventListener('click', () => {
     try {
       const source = standaloneSource.replace(/\/\* CONFIG_START \*\/[\s\S]*?\/\* CONFIG_END \*\//, `/* CONFIG_START */ ${JSON.stringify(state)} /* CONFIG_END */`);
@@ -305,7 +305,7 @@ function AppPrototype() {
       const link = document.createElement('a'); link.href = url; link.download = 'julia-background.html'; link.click();
       setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) { notice('The download could not be prepared. Please try again.'); console.error(error); }
-  });
+  }, { signal });
   updatePresets();
   updateAppearance();
   if (gl) {
@@ -314,9 +314,26 @@ function AppPrototype() {
   } else { notice('WebGL is unavailable here. This device will show a static background.'); updateMotionUI(); resize(); }
   if (motionPreference.matches) $('footnote').textContent = 'Reduced motion: starts paused · resume to preview';
 
+  return () => {
+    stop()
+    document.body.classList.remove('focus-mode')
+  }
+  }
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) throw new Error('The canvas element is unavailable.')
+    const controller = new AbortController()
+    const cleanup = setup(canvas, controller.signal)
+    return () => {
+      controller.abort()
+      cleanup()
+    }
+  }, [])
+
   return (
     <>
-      <canvas id="field" aria-hidden="true"></canvas>
+      <canvas id="field" ref={canvasRef} aria-hidden="true"></canvas>
       <div className="shell">
         <header>
           <div className="brand">
